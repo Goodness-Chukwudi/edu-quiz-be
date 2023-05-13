@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import mongoose, { ConnectOptions } from 'mongoose';
-import App from "./App"
+import App,{API_PATH} from "./App"
 
 dotenv.config();
 const port = process.env.PORT;
@@ -11,9 +11,9 @@ const options = {
   useUnifiedTopology: true
 };
 mongoose.connect(MONGO_URI, options as ConnectOptions);
-mongoose.connection.once('open', () => console.log('Connected to Mongo via Mongoose'));
-mongoose.connection.on('error', (err:any) => console.error('Unable to connect to Mongo via Mongoose\n'+ err));
+mongoose.connection.once('open', () => console.log('Connected to MongoDB via Mongoose'));
+mongoose.connection.on('error', (err:any) => console.error('Unable to connect to MongoDB via Mongoose\n'+ err));
 
 App.listen(port, () => {
-    console.log(`Express is listening at http://localhost:${port}`);
+    console.log(`Express is listening at http://localhost:${port}${API_PATH}`);
 });

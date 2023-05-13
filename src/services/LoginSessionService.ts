@@ -3,8 +3,7 @@ import LoginSession, {ILoginSession} from '../models/user/login_session';
 
 class LoginSessionService extends DBService<ILoginSession> {
 
-    constructor() {
-        const populatedFields:string[] = [];
+    constructor(populatedFields:string[] = []) {
         super(LoginSession, populatedFields);
     }
 }

@@ -1,4 +1,4 @@
-import {Model, HydratedDocument} from "mongoose";
+import {Model, HydratedDocument, ClientSession} from "mongoose";
 
 class DBService<T> {
 
@@ -10,16 +10,29 @@ class DBService<T> {
         this.fields = populatedPaths;
     }
 
-    protected saveMany(data:any[], session:any = null): Promise< HydratedDocument<T>[] > {
+    public saveMany(data:any[], session: ClientSession): Promise<any> {
         return this.Model.insertMany(data, {session: session});
     }
 
-    protected save(data:T, session:any = null): Promise<any> {
+    public save(data: any, session = null): Promise<any> {
         const model = new this.Model(data);
         return model.save({session: session});
     }
 
-    protected find(query:any, limit = 300, sort = {}, session = null): Promise< HydratedDocument<T>[] > {
+    public count(query = {}): Promise<number> {
+        return new Promise((resolve, reject) => {
+            this.Model.countDocuments(query)
+                .then((data) => {
+                    resolve(data);
+                })
+                .catch((e) => {
+                    reject(e);
+                })
+            ;
+        });
+    }
+
+    public find(query:any, sort = {}, limit = 300, session: ClientSession): Promise< HydratedDocument<T>[] > {
         return new Promise((resolve, reject) => {
             this.Model.find(query)
                 .session(session)
@@ -35,7 +48,7 @@ class DBService<T> {
         });
     }
 
-    protected findWithPopulate(query:any, limit = 300, sort = {}, session = null): Promise< HydratedDocument<T>[] > {
+    public findWithPopulate(query:any, sort = {}, limit = 300, session: ClientSession): Promise< HydratedDocument<T>[] > {
         return new Promise((resolve, reject) => {
             this.Model.find(query)
                 .session(session)
@@ -53,16 +66,16 @@ class DBService<T> {
     }
 
 
-    protected paginate(query:any, limit = 300, sort = {}, page = 1): Promise< HydratedDocument<T>[] > {
+    public paginate(query:any, sort = {}, limit = 300, page = 1): Promise< HydratedDocument<T>[] > {
         const customLabels = {
-            totalDocs: 'itemCount',
+            totalDocs: 'itemsCount',
             docs: 'data',
             limit: 'perPage',
             page: 'currentPage',
             nextPage: 'next',
             prevPage: 'prev',
             totalPages: 'pageCount',
-            pagingCounter: 'slNo',
+            pagingCounter: 'serialNumber',
             meta: 'paginator'
         };
 
@@ -86,16 +99,16 @@ class DBService<T> {
         });
     }
 
-    protected paginateWithPopulate(query:any, limit = 300, sort = {}, page = 1): Promise< HydratedDocument<T>[] > {
+    public paginateWithPopulate(query:any, limit = 300, sort = {}, page = 1): Promise< HydratedDocument<T>[] > {
         const customLabels = {
-            totalDocs: 'itemCount',
+            totalDocs: 'itemsCount',
             docs: 'data',
             limit: 'perPage',
             page: 'currentPage',
             nextPage: 'next',
             prevPage: 'prev',
             totalPages: 'pageCount',
-            pagingCounter: 'slNo',
+            pagingCounter: 'serialNumber',
             meta: 'paginator'
         };
 
@@ -120,7 +133,7 @@ class DBService<T> {
         });
     }
 
-    protected findById(id:string, session:any = null): Promise< HydratedDocument<T>[] > {
+    public findById(id:string, session: ClientSession): Promise< HydratedDocument<T> > {
         return new Promise((resolve, reject) => {
             this.Model.findById(id).session(session)
                 .then((data:any) => {
@@ -133,7 +146,7 @@ class DBService<T> {
         });
     }
 
-    protected findByIdWithPopulate(id:string, session:any = null): Promise< HydratedDocument<T>[] > {
+    public findByIdWithPopulate(id:string, session: ClientSession): Promise< HydratedDocument<T>[] > {
         return new Promise((resolve, reject) => {
             this.Model.findById(id).session(session)
                 .populate(this.fields)
@@ -148,7 +161,7 @@ class DBService<T> {
         });
     }
 
-    protected findOne(query:any, session = null): Promise< HydratedDocument<T>[] > {
+    public findOne(query:any, session = null): Promise< HydratedDocument<T> > {
         return new Promise((resolve, reject) => {
             this.Model.findOne(query)
                 .session(session)
@@ -162,7 +175,7 @@ class DBService<T> {
         });
     }
 
-    protected findOneWithPopulate(query:any, session = null): Promise< HydratedDocument<T>[] > {
+    public findOneWithPopulate(query:any, session: ClientSession): Promise< HydratedDocument<T> > {
         return new Promise((resolve, reject) => {
             this.Model.findOne(query)
                 .populate(this.fields)
@@ -177,15 +190,15 @@ class DBService<T> {
         });
     }
 
-    protected update(id:string, data:any, session:any = null): Promise<any> {
+    public update(id:string, data:any, session: ClientSession): Promise<any> {
         return this.Model.findByIdAndUpdate(id, data, {new: true}).session(session).exec();
     }
 
-    protected updateOne(query:any, data:any, session:any = null): Promise<any> {
+    public updateOne(query:any, data:any, session: ClientSession): Promise<any> {
         return this.Model.findOneAndUpdate(query, data, {new: true}).session(session).exec();
     }
 
-    protected updateMany(query:any, data:any[], session:any = null): Promise<any> {
+    public updateMany(query:any, data:any[], session: ClientSession): Promise<any> {
         return this.Model.updateMany(query, data).session(session).exec();
     }
 }

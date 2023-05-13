@@ -2,10 +2,11 @@ import RandomString, { GenerateOptions } from 'randomstring';
 import bcrypt = require('bcryptjs');
 import Jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from 'uuid';
-import {ILoginSession} from "../models/user/login_session";
+import { ILoginSession } from '../../models/user/login_session';
 import { Request } from 'express';
+import mongoose, { ClientSession } from 'mongoose';
 
-class AccountService {
+class AccountUtils {
 
 
     public generateUUIDV4() {
@@ -57,26 +58,13 @@ class AccountService {
     }
 
     public createLoginToken(loginSession: ILoginSession) {
-        const data: any = {user: loginSession.user, uuid: loginSession.uuid};
+        const data: any = {user: loginSession.user, uuid: loginSession.uuid, id: loginSession._id};
         return Jwt.sign({ data: data}, process.env.APP_SECRET!, { expiresIn: '24h' });
     }
 
-    public verifyToken(token: string, callback:(err:any, decoded:any) => void) {
-
-        Jwt.verify(token, process.env.APP_SECRET!, (err, decoded) => {
+    public verifyToken(token: string, callback:(err: any, decoded: any) => void) {
+        Jwt.verify(token, process.env.JWT_PRIVATEKEY!, (err, decoded) => {
             callback(err, decoded);
-        });
-    }
-
-    public verifyTokenAsync(token: string) {
-        return new Promise((resolve, reject) => {
-            Jwt.verify(token, process.env.APP_SECRET!, function(err, decoded) {
-                if (err) {
-                    reject(err)
-                } else {
-                    resolve(decoded);
-                }
-            });
         });
     }
     
@@ -84,12 +72,16 @@ class AccountService {
         return (process.env.ENVIRONMENT === "dev")? "password" : this.getCode();
     }
 
-    public getSalt() {
-        return bcrypt.genSaltSync(10);
-    }
-
-    public hashPassword(password:string, salt:string) {
-        return bcrypt.hashSync(password, salt);
+    public hashData(data: string): Promise<string>{
+        return new Promise(async (resolve, reject) => {
+            try {
+                const salt = uuidv4() + await bcrypt.genSalt(10);
+                const hash = bcrypt.hash(data, salt);
+                resolve(hash);
+            } catch (error) {
+                reject(error);
+            }
+        });       
     }
 
     getTokenFromRequest(req: Request) {
@@ -103,6 +95,23 @@ class AccountService {
         }
         return jwt;
     }
+
+    createMongooseTransaction(): Promise<any> {
+        return new Promise((resolve, reject) => {
+            let session: ClientSession;
+            mongoose.startSession()
+                .then(_session => {
+                    session = _session;
+                    session.startTransaction();
+                })
+                .then(() => {
+                    resolve(session);
+                })
+                .catch((error) => {
+                    reject(error);
+                });
+        });
+    }
 }
 
-export default AccountService;
+export default AccountUtils;
